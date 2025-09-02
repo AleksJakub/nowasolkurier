@@ -75,18 +75,18 @@ function Layout({ children }: { children: React.ReactNode }) {
               <Link to="/new-shipment">Nowa przesyłka</Link>
               <Link to="/tracking">Śledzenie</Link>
               <Link to="/profile">Profil</Link>
-              <button onClick={doLogout} className="btn btn-ghost" style={{ marginLeft: 8, height: 36, padding: '0 12px' }}>Wyloguj</button>
+              <button onClick={doLogout} className="btn btn-ghost logout-button" style={{ marginLeft: 8, height: 36, padding: '0 12px' }}>Wyloguj</button>
             </>}
             {!isAuthed && <Link to="/login">Zaloguj</Link>}
           </nav>
         </div>
       </header>
       <div className="main">{children}</div>
-      {/* Fixed background image in bottom-right for all pages */}
-      <div aria-hidden="true" style={{ position:'fixed', right: 0, bottom: 0, opacity: 0.25, pointerEvents:'none', userSelect:'none', zIndex: 0 }}>
-        <img src="/images/bg-img.png" alt="" style={{ display:'block', height: 420, width: 'auto' }} draggable={false} />
-      </div>
-      <footer className="footer">
+      <footer className="footer" style={{ position:'relative' }}>
+        {/* Image anchored above the footer */}
+        <div aria-hidden="true" style={{ position:'absolute', right: 12, bottom: 0, opacity: 0.25, pointerEvents:'none', userSelect:'none', zIndex: 0 }}>
+          <img src="/images/bg-img.png" alt="" style={{ display:'block', height: 780, width: 'auto', transform: 'translateX(-36px)' }} draggable={false} />
+        </div>
         <div style={{ display:'grid', rowGap: 8 }}>
           <div>
             Telefon: <a href="tel:07506684057">07506684057</a> · Email: <a href="mailto:nowasolkurier@wp.pl">nowasolkurier@wp.pl</a>
@@ -116,9 +116,13 @@ function Login() {
         if (!email || !password) { setErr('Podaj email i hasło'); return }
         if (password !== confirmPassword) { setErr('Hasła nie są takie same'); return }
         if (!agreeTerms || !agreePrivacy) { setErr('Zaznacz wymagane zgody'); return }
+        await api.post('/auth/register', { email, password })
+        const { data: loginData } = await api.post('/auth/login', { email, password })
+        login(loginData.token)
+        nav('/')
+        return
       }
-      const url = mode === 'login' ? '/auth/login' : '/auth/register'
-      const { data } = await api.post(url, { email, password })
+      const { data } = await api.post('/auth/login', { email, password })
       login(data.token)
       nav('/')
     } catch (e: any) {
@@ -720,6 +724,7 @@ function SettingsPage(){
 function Shipments() {
   type Shipment = { id: string; courier?: { name: string }; recipient_name: string; created_at: string; tracking_number?: string; label_url?: string }
   const [shipments, setShipments] = useState<Shipment[]>([])
+  const nav = useNavigate()
   useEffect(() => {
     (async () => {
       const { data } = await api.get('/shipments')
@@ -731,6 +736,12 @@ function Shipments() {
     <Layout>
       <div style={{ maxWidth: 900, margin: '24px auto', padding: 16 }}>
         <h3>Moje przesyłki</h3>
+        {shipments.length === 0 && (
+          <div style={{ background:'#EFF6FF', border:'1px solid #BFDBFE', color:'#1E3A8A', borderRadius:10, padding:12, margin:'12px 0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+            <div>Nie masz jeszcze żadnych przesyłek. Utwórz nową, aby rozpocząć.</div>
+            <button className="btn btn-primary" onClick={()=>nav('/new-shipment')} style={{ height:36 }}>Nowa przesyłka</button>
+          </div>
+        )}
         {shipments.map(s => (
           <div key={s.id} style={{ border:'1px solid #eee', padding: 12, marginBottom: 8 }}>
             <div style={{ display:'flex', justifyContent:'space-between' }}>
@@ -769,6 +780,7 @@ function ProfilePage(){
     billing_postcode: '',
     billing_country: 'Poland',
   })
+  const [justSaved, setJustSaved] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -795,6 +807,8 @@ function ProfilePage(){
     try{
       const { data } = await api.put('/users/profile', form)
       setProfile(data)
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 2500)
     }catch(e:any){ setErr('Nie udało się zapisać') }
   }
 
@@ -826,14 +840,16 @@ function ProfilePage(){
           </div>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:16, alignItems:'start', marginTop:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:16, alignItems:'stretch', marginTop:16 }}>
           <div className="card" style={{ marginTop: 0 }}>
             <h2 style={{ margin:0 }}>Dane osobowe</h2>
             <label className="label" htmlFor="full_name">Imię i nazwisko</label>
             <input id="full_name" className="input" value={form.full_name} onChange={e=>setForm(f=>({ ...f, full_name: e.target.value }))} style={{ width:'100%' }} />
 
-            <label className="label" htmlFor="phone" style={{ marginTop: 12 }}>Telefon</label>
-            <input id="phone" className="input" value={form.phone} onChange={e=>setForm(f=>({ ...f, phone: e.target.value }))} style={{ width:'100%' }} />
+            <div style={{ marginTop: 12, display:'grid', rowGap: 6 }}>
+              <label className="label" htmlFor="phone" style={{ marginBottom: 0 }}>Telefon</label>
+              <input id="phone" className="input" value={form.phone} onChange={e=>setForm(f=>({ ...f, phone: e.target.value }))} style={{ width:'100%' }} />
+            </div>
 
             <label className="label" htmlFor="company_name" style={{ marginTop: 12 }}>Nazwa firmy</label>
             <input id="company_name" className="input" value={form.company_name} onChange={e=>setForm(f=>({ ...f, company_name: e.target.value }))} style={{ width:'100%' }} />
@@ -846,24 +862,24 @@ function ProfilePage(){
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:12 }}>
               <div style={{ display:'grid', rowGap:6 }}>
-                <label className="label" htmlFor="addr2">Adres (linia 2)</label>
+                <label className="label" htmlFor="addr2" style={{ marginBottom: 0 }}>Adres (linia 2)</label>
                 <input id="addr2" className="input" value={form.billing_address_line2} onChange={e=>setForm(f=>({ ...f, billing_address_line2: e.target.value }))} style={{ width:'100%' }} />
               </div>
               <div style={{ display:'grid', rowGap:6 }}>
-                <label className="label" htmlFor="city">Miejscowość</label>
+                <label className="label" htmlFor="city" style={{ marginBottom: 0 }}>Miejscowość</label>
                 <input id="city" className="input" value={form.billing_city} onChange={e=>setForm(f=>({ ...f, billing_city: e.target.value }))} style={{ width:'100%' }} />
               </div>
             </div>
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginTop:12 }}>
               <div style={{ display:'grid', rowGap:6 }}>
-                <label className="label" htmlFor="country">Kraj</label>
+                <label className="label" htmlFor="country" style={{ marginBottom: 0 }}>Kraj</label>
                 <select id="country" className="input" value={form.billing_country} onChange={e=>setForm(f=>({ ...f, billing_country: e.target.value }))} style={{ width:'100%' }}>
                   {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
               <div style={{ display:'grid', rowGap:6 }}>
-                <label className="label" htmlFor="postcode">Kod pocztowy</label>
+                <label className="label" htmlFor="postcode" style={{ marginBottom: 0 }}>Kod pocztowy</label>
                 <input id="postcode" className="input" value={form.billing_postcode} onChange={e=>setForm(f=>({ ...f, billing_postcode: e.target.value }))} style={{ width:'100%' }} />
               </div>
             </div>
@@ -871,6 +887,9 @@ function ProfilePage(){
         </div>
 
         <div style={{ display:'flex', justifyContent:'end', gap:8, marginTop: 16 }}>
+          {justSaved && (
+            <button className="btn btn-ghost" disabled style={{ background:'#ECFDF5', borderColor:'#A7F3D0', color:'#065F46' }}>Zapisano</button>
+          )}
           <button className="btn btn-ghost" onClick={()=>window.history.back()}>Anuluj</button>
           <button className="btn btn-primary" onClick={save}>Zapisz</button>
         </div>
