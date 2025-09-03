@@ -58,8 +58,8 @@ export class ShipmentsController {
 
 	@Get('/label/:tracking.txt')
 	label(@Param('tracking') tracking: string, @Res() res: Response) {
-		res.setHeader('Content-Type', 'text/plain');
-		res.setHeader('Content-Disposition', `attachment; filename=label-${tracking}.txt`);
-		res.send(`NowaSolKurier\nFakeKurier Label\nTracking: ${tracking}\n`);
+		res.set('Content-Type', 'text/plain');
+		res.set('Content-Disposition', `attachment; filename=label-${tracking}.txt`);
+		return res.send(`NowaSolKurier\nFakeKurier Label\nTracking: ${tracking}\n`);
 	}
 }
