@@ -9,6 +9,9 @@ import { User } from '../entities/user.entity';
 import { Courier } from '../entities/courier.entity';
 import { Shipment } from '../entities/shipment.entity';
 import { TrackController } from './shipments/track.controller';
+import { HealthController } from '../health.controller';
+
+
 
 @Module({
 	imports: [
@@ -60,6 +63,6 @@ import { TrackController } from './shipments/track.controller';
 		CouriersModule,
 		ShipmentsModule,
 	],
-	controllers: [TrackController],
+	controllers: [TrackController, HealthController],
 })
 export class AppModule {}
