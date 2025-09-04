@@ -1,5 +1,5 @@
 // src/modules/shipments/shipments.controller.ts
-import { Body, Controller, Get, Param, Post, Req, UseGuards, StreamableFile } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards, StreamableFile, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ShipmentsService } from './shipments.service';
@@ -9,6 +9,12 @@ import { CreateShipmentDto, QuoteRequestDto } from './dto';
 @Controller('shipments')
 export class ShipmentsController {
   constructor(private readonly shipmentsService: ShipmentsService) {}
+
+  private getUserId(req: Request): string {
+    const uid = (req as any).user?.userId as string | undefined;
+    if (!uid) throw new UnauthorizedException('Missing user in request');
+    return uid;
+  }
 
   @Post('quotes')
   quotes(@Body() body: QuoteRequestDto) {
@@ -25,7 +31,7 @@ export class ShipmentsController {
 
   @Post()
   create(@Body() body: CreateShipmentDto, @Req() req: Request) {
-    const userId: string | undefined = (req as any).user?.userId;
+    const userId = this.getUserId(req);
     return this.shipmentsService.createShipment({
       userId,
       courierId: body.courier_id,
@@ -46,7 +52,7 @@ export class ShipmentsController {
 
   @Get()
   list(@Req() req: Request) {
-    const userId: string | undefined = (req as any).user?.userId;
+    const userId = this.getUserId(req);
     return this.shipmentsService.findByUser(userId);
   }
 
