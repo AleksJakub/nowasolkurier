@@ -9,10 +9,10 @@ async function bootstrap() {
   // All routes will be under /api/*
   app.setGlobalPrefix('api');
 
-  // CORS: comma-separated origins in CORS_ORIGIN
+  // CORS: comma-separated origins in CORS_ORIGIN. If unset, allow all origins.
   const corsOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map(s => s.trim())
-    : ['http://localhost:3000']; // sensible default for local dev
+    : true;
 
   app.enableCors({
     origin: corsOrigins,

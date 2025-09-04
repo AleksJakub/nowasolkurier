@@ -27,6 +27,9 @@ docker compose up --build
 ## Environment Variables
 See `.env.example`. For local Docker, defaults are fine.
 
+- `CORS_ORIGIN` – comma-separated list of origins allowed to call the API. If unset, all origins are permitted.
+- `VITE_API_URL` – base URL of the backend API used by the frontend (include the `/api` prefix, e.g. `https://your-backend.onrender.com/api`).
+
 ## Local Development (without Docker)
 - Start Postgres locally and set env vars in `.env`.
 - Backend:
