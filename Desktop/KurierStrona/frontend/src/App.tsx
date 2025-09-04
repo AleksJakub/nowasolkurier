@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom'
-import axios from 'axios'
+import api from './api'
 import './styles.css'
-
-const api = axios.create({ baseURL: '/api' })
 
 // Small input sanitizer for basic safety (keeps text user-friendly)
 function sanitize(v: string){
@@ -26,16 +24,6 @@ const Handoff = [
   { value: 'locker', label: 'Oddanie w paczkomacie' },
   { value: 'pickup', label: 'Odbiór od klienta' },
 ]
-
-// Global interceptor reads token from localStorage on each request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    if (!config.headers) config.headers = {} as any
-    ;(config.headers as any).Authorization = `Bearer ${token}`
-  }
-  return config
-})
 
 function useAuth() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
